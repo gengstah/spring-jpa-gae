@@ -1,0 +1,111 @@
+apply plugin: 'gae'
+apply plugin: 'eclipse'
+apply plugin: 'jetty'
+
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+
+	dependencies {
+		classpath 'org.gradle.api.plugins:gradle-gae-plugin:0.8'
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	def springVersion = "3.2.2.RELEASE"
+	
+	providedCompile "javax.servlet:servlet-api:2.5"
+	
+	testCompile "junit:junit:4.+"
+	testCompile "org.mockito:mockito-all:1.9.5"
+	
+	compile "log4j:log4j:1.2.16"
+	compile "org.slf4j:slf4j-api:1.7.2"
+	compile "org.slf4j:slf4j-log4j12:1.7.2"
+	
+	compile "org.springframework:spring-core:$springVersion"
+	compile "org.springframework:spring-context:$springVersion"
+	compile "org.springframework:spring-context-support:$springVersion"
+	compile "org.springframework:spring-jdbc:$springVersion"
+	compile "org.springframework:spring-web:$springVersion"
+	compile "org.springframework:spring-webmvc:$springVersion"
+	compile "org.springframework:spring-orm:$springVersion"
+	
+	compile "jstl:jstl:1.2"
+		
+	compile "org.apache.geronimo.specs:geronimo-jpa_2.0_spec:1.1"
+	runtime "org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1"
+	runtime "org.datanucleus:datanucleus-core:3.1.1"
+	runtime "org.datanucleus:datanucleus-api-jpa:3.1.2"
+	runtime "org.datanucleus:datanucleus-api-jdo:3.1.2"
+	runtime "javax.jdo:jdo-api:3.0.1"
+	runtime "javax.transaction:jta:1.1"
+	runtime "com.google.inject.extensions:guice-servlet:3.0"
+	runtime "com.google.appengine:appengine-api-1.0-sdk:1.8.2"
+	runtime "com.google.appengine:appengine-api-labs:1.8.2"
+	runtime "com.google.appengine.orm:datanucleus-appengine:2.1.2"
+	runtime "org.datanucleus:datanucleus-enhancer:3.1.1"
+	
+	compile "javax.validation:validation-api:1.0.0.GA"
+	compile "org.hibernate:hibernate-validator:4.3.1.Final"
+	
+	compile "javax.mail:mail:1.4.7"
+	
+	runtime "org.aspectj:aspectjweaver:1.7.2"
+}
+
+gaeEnhance.doFirst {
+	 copy {
+	 	into('src/main/webapp/WEB-INF/lib/')
+	 	from configurations.compile
+	 }
+}
+
+gaeEnhance.doLast {
+	delete {
+		delete('src/main/webapp/WEB-INF/lib/')
+	}
+}
+
+war.dependsOn 'gaeEnhance'
+
+task wrapper(type: Wrapper) {
+	description = 'Generates gradlew[.bat] scripts'
+    gradleVersion = '1.4'
+}
+
+task initProject () << {
+	project.apply { plugin('war') }
+
+	project.sourceSets*.allSource.srcDirTrees.flatten().dir.each { dir ->
+		dir.mkdirs()
+	}
+}
+
+gae {
+    httpPort = 8080
+    optimizeWar = false
+	
+    appcfg {
+        email = '...'
+        password = '...'
+
+        logs {
+            severity = 1
+            outputFile = file('logs.txt')
+        }
+
+        app {
+            id = 'spring-jpa-gae'
+        }
+    }
+}
+
+jettyRun {
+    contextPath = "/"
+}
